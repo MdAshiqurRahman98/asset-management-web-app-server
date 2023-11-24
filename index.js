@@ -91,6 +91,33 @@ async function run() {
             console.log(error);
         }
 
+        // Users related APIs
+        try {
+            app.put('api/v1/users/:email', async (req, res) => {
+                const email = req.params.email;
+                const user = req.body;
+                const query = { email: email };
+                const options = { upsert: true };
+                const existingUser = await userCollection.findOne(query);
+
+                if (existingUser) {
+                    return res.send({ message: 'User already exists' });
+                }
+
+                const result = await userCollection.updateOne(
+                    query,
+                    {
+                        $set: { ...user, timestamp: Date.now() }
+                    },
+                    options
+                );
+                res.send(result);
+            });
+        }
+        catch (error) {
+            console.log(error);
+        }
+
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
