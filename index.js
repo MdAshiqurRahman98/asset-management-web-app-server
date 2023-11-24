@@ -54,6 +54,43 @@ const verifyToken = async (req, res, next) => {
 
 async function run() {
     try {
+        const userCollection = client.db('assetDB').collection('users');
+
+        // Auth related APIs
+        try {
+            app.post('/jwt', logger, async (req, res) => {
+                const user = req.body;
+                console.log('User: ', user);
+
+                const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+                    expiresIn: '1h'
+                });
+
+                res
+                    .cookie('token', token, {
+                        httpOnly: true,
+                        secure: true,
+                        sameSite: 'none',
+                        maxAge: 24 * 60 * 60 * 1000   // 24 hours
+                    })
+                    .send({ success: true });
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
+            app.post('/logout', async (req, res) => {
+                const user = req.body;
+                console.log('Logging out', user);
+                res.clearCookie('token', { maxAge: 0 }).send({ success: true });
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
