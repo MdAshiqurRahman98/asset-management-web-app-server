@@ -52,6 +52,17 @@ const verifyToken = async (req, res, next) => {
     })
 }
 
+const verifyAdmin = async (req, res, next) => {
+    const email = req.decoded.email;
+    const query = { email: email };
+    const user = await userCollection.findOne(query);
+    const isAdmin = user?.role === 'admin';
+    if (!isAdmin) {
+        return res.status(403).send({ message: 'forbidden access' });
+    }
+    next();
+}
+
 async function run() {
     try {
         const userCollection = client.db('assetDB').collection('users');
@@ -93,7 +104,7 @@ async function run() {
 
         // Users related APIs
         try {
-            app.put('api/v1/users/:email', async (req, res) => {
+            app.put('/api/v1/users/:email', async (req, res) => {
                 const email = req.params.email;
                 const user = req.body;
                 const query = { email: email };
