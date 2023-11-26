@@ -66,6 +66,7 @@ const verifyAdmin = async (req, res, next) => {
 async function run() {
     try {
         const userCollection = client.db('assetDB').collection('users');
+        const paymentCollection = client.db("assetDB").collection("payments");
 
         // Auth related APIs
         try {
@@ -124,6 +125,40 @@ async function run() {
                 );
                 res.send(result);
             });
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        // Payment related APIs
+        try {
+            app.post('/api/v1/make-payment-intent', async (req, res) => {
+                const price = req.body;
+                const amount = parseInt(price * 100);
+                console.log(amount, 'Amount inside the intent');
+
+                const paymentIntent = await stripe.paymentIntents.create({
+                    amount: amount,
+                    currency: 'usd',
+                    payment_method_types: ['card']
+                });
+
+                res.send({
+                    clientSecret: paymentIntent.client_secret
+                })
+            });
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
+            app.post('/api/v1/payments', async (req, res) => {
+                const payment = req.body;
+                const paymentResult = await paymentCollection.insertOne(payment);
+                console.log('Payment info', payment);
+                res.send({ paymentResult });
+            })
         }
         catch (error) {
             console.log(error);
