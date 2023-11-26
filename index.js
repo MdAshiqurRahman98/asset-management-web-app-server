@@ -105,6 +105,27 @@ async function run() {
 
         // Users related APIs
         try {
+            app.get('/api/v1/users/admin/:email', verifyToken, async (req, res) => {
+                const email = req.params.email;
+
+                if (email !== req.decoded.email) {
+                    return res.status(403).send({ message: 'forbidden access' })
+                }
+
+                const query = { email: email };
+                const user = await userCollection.findOne(query);
+                let admin = false;
+                if (user) {
+                    admin = user?.role === 'admin';
+                }
+                res.send({ admin });
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
             app.put('/api/v1/users/:email', async (req, res) => {
                 const email = req.params.email;
                 const user = req.body;
@@ -125,6 +146,23 @@ async function run() {
                 );
                 res.send(result);
             });
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
+            app.patch('/api/v1/users/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
+                const id = req.params.id;
+                const filter = { _id: new ObjectId(id) };
+                const updatedDoc = {
+                    $set: {
+                        role: 'admin'
+                    }
+                }
+                const result = await userCollection.updateOne(filter, updatedDoc);
+                res.send(result);
+            })
         }
         catch (error) {
             console.log(error);
