@@ -27,46 +27,46 @@ const client = new MongoClient(uri, {
     }
 });
 
-// Custom middlewares
-const logger = async (req, res, next) => {
-    console.log('called: ', req.hostname, req.originalUrl);
-    console.log('log: info', req.method, req.url);
-    next();
-}
-
-const verifyToken = async (req, res, next) => {
-    const token = req?.cookies?.token;
-    // console.log('Token in the middleware: ', token);
-
-    if (!token) {
-        return res.status(401).send({ message: 'unauthorized access' });
-    }
-
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-        if (err) {
-            return res.status(401).send({ message: 'unauthorized access' });
-        }
-
-        req.user = decoded;
-        next();
-    })
-}
-
-const verifyAdmin = async (req, res, next) => {
-    const email = req.decoded.email;
-    const query = { email: email };
-    const user = await userCollection.findOne(query);
-    const isAdmin = user?.role === 'admin';
-    if (!isAdmin) {
-        return res.status(403).send({ message: 'forbidden access' });
-    }
-    next();
-}
-
 async function run() {
     try {
         const userCollection = client.db('assetDB').collection('users');
         const paymentCollection = client.db("assetDB").collection("payments");
+
+        // Custom middlewares
+        const logger = async (req, res, next) => {
+            console.log('called: ', req.hostname, req.originalUrl);
+            console.log('log: info', req.method, req.url);
+            next();
+        }
+
+        const verifyToken = async (req, res, next) => {
+            const token = req?.cookies?.token;
+            // console.log('Token in the middleware: ', token);
+
+            if (!token) {
+                return res.status(401).send({ message: 'unauthorized access' });
+            }
+
+            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+                if (err) {
+                    return res.status(401).send({ message: 'unauthorized access' });
+                }
+
+                req.decoded = decoded;
+                next();
+            })
+        }
+
+        const verifyAdmin = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            const isAdmin = user?.role === 'admin';
+            if (!isAdmin) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+            next();
+        }
 
         // Auth related APIs
         try {
@@ -105,7 +105,7 @@ async function run() {
 
         // Users related APIs
         try {
-            app.get('/api/v1/users/:email', verifyToken, async (req, res) => {
+            app.get('/api/v1/users/:email', logger, verifyToken, async (req, res) => {
                 const email = req.params.email;
                 const query = { email: email };
                 const result = await userCollection.findOne(query);
@@ -117,11 +117,11 @@ async function run() {
         }
 
         try {
-            app.get('/api/v1/users/admin/:email', verifyToken, async (req, res) => {
+            app.get('/api/v1/users/admin/:email', logger, verifyToken, async (req, res) => {
                 const email = req.params.email;
 
                 if (email !== req.decoded.email) {
-                    return res.status(403).send({ message: 'forbidden access' })
+                    return res.status(403).send({ message: 'forbidden access' });
                 }
 
                 const query = { email: email };
@@ -163,27 +163,27 @@ async function run() {
             console.log(error);
         }
 
-        try {
-            app.patch('/api/v1/users/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
-                const id = req.params.id;
-                const filter = { _id: new ObjectId(id) };
-                const updatedDoc = {
-                    $set: {
-                        role: 'admin'
-                    }
-                }
-                const result = await userCollection.updateOne(filter, updatedDoc);
-                res.send(result);
-            })
-        }
-        catch (error) {
-            console.log(error);
-        }
+        // try {
+        //     app.patch('/api/v1/users/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
+        //         const id = req.params.id;
+        //         const filter = { _id: new ObjectId(id) };
+        //         const updatedDoc = {
+        //             $set: {
+        //                 role: 'admin'
+        //             }
+        //         }
+        //         const result = await userCollection.updateOne(filter, updatedDoc);
+        //         res.send(result);
+        //     })
+        // }
+        // catch (error) {
+        //     console.log(error);
+        // }
 
         // Payment related APIs
         try {
             app.post('/api/v1/make-payment-intent', async (req, res) => {
-                const price = req.body;
+                const { price } = req.body;
                 const amount = parseInt(price * 100);
                 console.log(amount, 'Amount inside the intent');
 
