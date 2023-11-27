@@ -105,6 +105,18 @@ async function run() {
 
         // Users related APIs
         try {
+            app.get('/api/v1/users/:email', verifyToken, async (req, res) => {
+                const email = req.params.email;
+                const query = { email: email };
+                const result = await userCollection.findOne(query);
+                res.send(result);
+            });
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
             app.get('/api/v1/users/admin/:email', verifyToken, async (req, res) => {
                 const email = req.params.email;
 
