@@ -255,9 +255,38 @@ async function run() {
             console.log(error);
         }
 
-        // Product related API
+        // Product related APIs
         try {
-            app.post('/api/v1/add-asset', logger, verifyToken, verifyAdmin, async (req, res) => {
+            app.get('/api/v1/products', logger, verifyToken, verifyAdmin, async (req, res) => {
+                if (req.query.email !== req.decoded.email) {
+                    return res.status(403).send({ message: 'forbidden access' });
+                }
+
+                const email = req.query.email;
+                const query = { email: email };
+                const cursor = productCollection.find(query);
+                const result = await cursor.sort({ timestamp: -1 }).toArray();
+                res.send(result);
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
+            app.get('/api/v1/product/:id', verifyToken, verifyAdmin, async (req, res) => {
+                const id = req.params.id;
+                const query = { _id: new ObjectId(id) };
+                const result = await productCollection.findOne(query);
+                res.send(result);
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
+            app.post('/api/v1/add-product', logger, verifyToken, verifyAdmin, async (req, res) => {
                 console.log(req.query.email);
                 // console.log('Token', req.cookies.token);
                 console.log('User of the valid token', req.decoded);
@@ -266,10 +295,10 @@ async function run() {
                     return res.status(403).send({ message: 'forbidden access' });
                 }
 
-                const newAsset = req.body;
-                newAsset.timestamp = new Date();
-                console.log(newAsset);
-                const result = await productCollection.insertOne(newAsset);
+                const newProduct = req.body;
+                newProduct.timestamp = new Date();
+                console.log(newProduct);
+                const result = await productCollection.insertOne(newProduct);
                 res.send(result);
             })
         }
