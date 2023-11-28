@@ -218,9 +218,32 @@ async function run() {
 
         // Assets related APIs
         try {
-            app.get('/api/v1/assets', async (req, res) => {
-                const cursor = assetCollection.find();
-                const result = await cursor.toArray();
+            app.get('/api/v1/assets', logger, verifyToken, async (req, res) => {
+                const email = req.query.email;
+                const query = { email: email };
+                const cursor = blogCollection.find(query);
+                const result = await cursor.sort({ timestamp: -1 }).toArray();
+                res.send(result);
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
+            app.post('/api/v1/make-custom-request', logger, verifyToken, async (req, res) => {
+                console.log(req.query.email);
+                // console.log('Token', req.cookies.token);
+                console.log('User of the valid token', req.decoded);
+
+                if (req.query.email !== req.decoded.email) {
+                    return res.status(403).send({ message: 'forbidden access' });
+                }
+
+                const newAssetRequest = req.body;
+                newAssetRequest.timestamp = new Date();
+                console.log(newAssetRequest);
+                const result = await assetCollection.insertOne(newAssetRequest);
                 res.send(result);
             })
         }
