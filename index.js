@@ -31,6 +31,8 @@ async function run() {
     try {
         const userCollection = client.db('assetDB').collection('users');
         const paymentCollection = client.db("assetDB").collection("payments");
+        const assetCollection = client.db("assetDB").collection("assets");
+        const productCollection = client.db("assetDB").collection("products");
 
         // Custom middlewares
         const logger = async (req, res, next) => {
@@ -208,6 +210,18 @@ async function run() {
                 const paymentResult = await paymentCollection.insertOne(payment);
                 console.log('Payment info', payment);
                 res.send({ paymentResult });
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        // Assets related APIs
+        try {
+            app.get('/api/v1/assets', async (req, res) => {
+                const cursor = assetCollection.find();
+                const result = await cursor.toArray();
+                res.send(result);
             })
         }
         catch (error) {
