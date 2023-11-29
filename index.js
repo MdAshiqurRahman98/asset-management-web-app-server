@@ -229,6 +229,18 @@ async function run() {
         }
 
         try {
+            app.get('/api/v1/asset/:id', async (req, res) => {
+                const id = req.params.id;
+                const query = { _id: new ObjectId(id) };
+                const result = await assetCollection.findOne(query);
+                res.send(result);
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
             app.post('/api/v1/make-custom-request', logger, verifyToken, async (req, res) => {
                 console.log(req.query.email);
                 // console.log('Token', req.cookies.token);
@@ -242,6 +254,41 @@ async function run() {
                 newAssetRequest.timestamp = new Date();
                 console.log(newAssetRequest);
                 const result = await assetCollection.insertOne(newAssetRequest);
+                res.send(result);
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
+            app.patch('/api/v1/update-asset/:id', logger, verifyToken, async (req, res) => {
+                console.log(req.query.email);
+                // console.log('Token', req.cookies.token);
+                console.log('User of the valid token', req.decoded);
+
+                if (req.query.email !== req.decoded.email) {
+                    return res.status(403).send({ message: 'forbidden access' });
+                }
+
+                const id = req.params.id;
+                const filter = { _id: new ObjectId(id) };
+                const updatedAsset = req.body;
+
+                const asset = {
+                    $set: {
+                        email: updatedAsset.email,
+                        assetName: updatedAsset.assetName,
+                        assetPrice: updatedAsset.assetPrice,
+                        assetType: updatedAsset.assetType,
+                        assetImage: updatedAsset.assetImage,
+                        whyNeeded: updatedAsset.whyNeeded,
+                        additionalInfo: updatedAsset.additionalInfo,
+                        status: 'pending'
+                    }
+                }
+
+                const result = await assetCollection.updateOne(filter, asset);
                 res.send(result);
             })
         }
