@@ -218,6 +218,17 @@ async function run() {
 
         // Assets related APIs
         try {
+            app.get('/api/v1/all-assets', logger, verifyToken, verifyAdmin, async (req, res) => {
+                const cursor = assetCollection.find();
+                const result = await cursor.sort({ timestamp: -1 }).toArray();
+                res.send(result);
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
             app.get('/api/v1/assets', logger, verifyToken, async (req, res) => {
                 if (req.query.email !== req.decoded.email) {
                     return res.status(403).send({ message: 'forbidden access' });
@@ -274,7 +285,7 @@ async function run() {
         }
 
         try {
-            app.get('/api/v1/product/:id', verifyToken, verifyAdmin, async (req, res) => {
+            app.get('/api/v1/product/:id', async (req, res) => {
                 const id = req.params.id;
                 const query = { _id: new ObjectId(id) };
                 const result = await productCollection.findOne(query);
@@ -299,6 +310,57 @@ async function run() {
                 newProduct.timestamp = new Date();
                 console.log(newProduct);
                 const result = await productCollection.insertOne(newProduct);
+                res.send(result);
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
+            app.patch('/api/v1/update-product/:id', logger, verifyToken, verifyAdmin, async (req, res) => {
+                console.log(req.query.email);
+                // console.log('Token', req.cookies.token);
+                console.log('User of the valid token', req.decoded);
+
+                if (req.query.email !== req.decoded.email) {
+                    return res.status(403).send({ message: 'forbidden access' });
+                }
+
+                const id = req.params.id;
+                const filter = { _id: new ObjectId(id) };
+                const updatedProduct = req.body;
+
+                const product = {
+                    $set: {
+                        email: updatedProduct.email,
+                        productName: updatedProduct.productName,
+                        productType: updatedProduct.productType,
+                        productQuantity: updatedProduct.productQuantity
+                    }
+                }
+
+                const result = await productCollection.updateOne(filter, product);
+                res.send(result);
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
+            app.delete('/api/v1/delete-product/:id', logger, verifyToken, verifyAdmin, async (req, res) => {
+                console.log(req.query.email);
+                // console.log('Token', req.cookies.token);
+                console.log('User of the valid token', req.decoded);
+
+                if (req.query.email !== req.decoded.email) {
+                    return res.status(403).send({ message: 'forbidden access' });
+                }
+
+                const id = req.params.id;
+                const query = { _id: new ObjectId(id) }
+                const result = await productCollection.deleteOne(query);
                 res.send(result);
             })
         }
