@@ -165,23 +165,6 @@ async function run() {
             console.log(error);
         }
 
-        // try {
-        //     app.patch('/api/v1/users/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
-        //         const id = req.params.id;
-        //         const filter = { _id: new ObjectId(id) };
-        //         const updatedDoc = {
-        //             $set: {
-        //                 role: 'admin'
-        //             }
-        //         }
-        //         const result = await userCollection.updateOne(filter, updatedDoc);
-        //         res.send(result);
-        //     })
-        // }
-        // catch (error) {
-        //     console.log(error);
-        // }
-
         // Payment related APIs
         try {
             app.post('/api/v1/make-payment-intent', async (req, res) => {
@@ -259,6 +242,40 @@ async function run() {
                 newAssetRequest.timestamp = new Date();
                 console.log(newAssetRequest);
                 const result = await assetCollection.insertOne(newAssetRequest);
+                res.send(result);
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
+            app.patch('/api/v1/assets/request-approve/:id', logger, verifyToken, verifyAdmin, async (req, res) => {
+                const id = req.params.id;
+                const filter = { _id: new ObjectId(id) };
+                const updatedDoc = {
+                    $set: {
+                        status: 'approved'
+                    }
+                }
+                const result = await assetCollection.updateOne(filter, updatedDoc);
+                res.send(result);
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
+            app.patch('/api/v1/assets/request-reject/:id', logger, verifyToken, verifyAdmin, async (req, res) => {
+                const id = req.params.id;
+                const filter = { _id: new ObjectId(id) };
+                const updatedDoc = {
+                    $set: {
+                        status: 'rejected'
+                    }
+                }
+                const result = await assetCollection.updateOne(filter, updatedDoc);
                 res.send(result);
             })
         }
