@@ -130,6 +130,30 @@ async function run() {
         }
 
         try {
+            app.get('/api/v1/users/user-profile/:email', logger, verifyToken, async (req, res) => {
+                const email = req.params.email;
+                const query = { email: email };
+                const result = await userCollection.find(query).toArray();
+                res.send(result);
+            });
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
+            app.get('/api/v1/user-profile-info/:id', async (req, res) => {
+                const id = req.params.id;
+                const query = { _id: new ObjectId(id) };
+                const result = await userCollection.findOne(query);
+                res.send(result);
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
             app.get('/api/v1/users/admin/:email', logger, verifyToken, async (req, res) => {
                 const email = req.params.email;
 
@@ -171,6 +195,38 @@ async function run() {
                 );
                 res.send(result);
             });
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
+            app.patch('/api/v1/update-user-profile/:id', logger, verifyToken, async (req, res) => {
+                console.log(req.query.email);
+                // console.log('Token', req.cookies.token);
+                console.log('User of the valid token', req.decoded);
+
+                if (req.query.email !== req.decoded.email) {
+                    return res.status(403).send({ message: 'forbidden access' });
+                }
+
+                const id = req.params.id;
+                const filter = { _id: new ObjectId(id) };
+                const updatedUserProfile = req.body;
+
+                const userProfile = {
+                    $set: {
+                        email: updatedUserProfile.email,
+                        name: updatedUserProfile.name,
+                        dob: updatedUserProfile.dob,
+                        photoURL: updatedUserProfile.photoURL,
+                        timestamp: Date.now()
+                    }
+                }
+
+                const result = await userCollection.updateOne(filter, userProfile);
+                res.send(result);
+            })
         }
         catch (error) {
             console.log(error);
