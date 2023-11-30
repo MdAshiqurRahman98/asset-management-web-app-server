@@ -107,6 +107,17 @@ async function run() {
 
         // Users related APIs
         try {
+            app.get('/api/v1/all-users', logger, verifyToken, async (req, res) => {
+                const cursor = userCollection.find();
+                const result = await cursor.sort({ timestamp: -1 }).toArray();
+                res.send(result);
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
             app.get('/api/v1/users/:email', logger, verifyToken, async (req, res) => {
                 const email = req.params.email;
                 const query = { email: email };
@@ -165,6 +176,26 @@ async function run() {
             console.log(error);
         }
 
+        try {
+            app.delete('/api/v1/remove-employee/:id', logger, verifyToken, verifyAdmin, async (req, res) => {
+                console.log(req.query.email);
+                // console.log('Token', req.cookies.token);
+                console.log('User of the valid token', req.decoded);
+
+                if (req.query.email !== req.decoded.email) {
+                    return res.status(403).send({ message: 'forbidden access' });
+                }
+
+                const id = req.params.id;
+                const query = { _id: new ObjectId(id) }
+                const result = await userCollection.deleteOne(query);
+                res.send(result);
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
         // Payment related APIs
         try {
             app.post('/api/v1/make-payment-intent', async (req, res) => {
@@ -203,6 +234,18 @@ async function run() {
         try {
             app.get('/api/v1/all-assets', logger, verifyToken, verifyAdmin, async (req, res) => {
                 const cursor = assetCollection.find();
+                const result = await cursor.sort({ timestamp: -1 }).toArray();
+                res.send(result);
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
+            app.get('/api/v1/pending-assets', logger, verifyToken, verifyAdmin, async (req, res) => {
+                const query = { status: 'pending' };
+                const cursor = assetCollection.find(query);
                 const result = await cursor.sort({ timestamp: -1 }).toArray();
                 res.send(result);
             })
