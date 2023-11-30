@@ -10,7 +10,7 @@ const port = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-    origin: ['http://localhost:5173'],
+    origin: ['https://assetmanagementweb.netlify.app'],
     credentials: true
 }));
 app.use(express.json());
