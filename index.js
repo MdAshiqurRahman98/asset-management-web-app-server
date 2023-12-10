@@ -4,6 +4,13 @@ const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 require('dotenv').config();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const formData = require('form-data');
+const Mailgun = require('mailgun.js');
+const mailgun = new Mailgun(formData);
+const mg = mailgun.client({
+    username: 'api',
+    key: process.env.MAIL_GUN_API_KEY,
+});
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
@@ -279,6 +286,25 @@ async function run() {
                 const payment = req.body;
                 const paymentResult = await paymentCollection.insertOne(payment);
                 console.log('Payment info', payment);
+
+                // Send user email about payment confirmation
+                mg.messages
+                    .create(process.env.MAIL_SENDING_DOMAIN, {
+                        from: "Mailgun Sandbox <postmaster@sandboxbdfffae822db40f6b0ccc96ae1cb28f3.mailgun.org>",
+                        to: ["mdashiqur72@gmail.com"],
+                        subject: "Join as Admin/HR Confirmation",
+                        text: "Testing some Mailgun awesomeness!",
+                        html: `
+            <div>
+              <h3>Thank you for joining as Admin/HR</h3>
+              <h5>Your Transaction ID: <b>${payment.transactionId}</b></h5>
+              <p>We would like to get your feedback about our asset management system.</p>
+            </div>
+          `
+                    })
+                    .then(msg => console.log(msg)) // logs response data
+                    .catch(err => console.log(err)); // logs any error
+
                 res.send({ paymentResult });
             })
         }
